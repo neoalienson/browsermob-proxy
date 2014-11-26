@@ -62,14 +62,18 @@ Once that is done, a new proxy will be available on the port returned. All you h
  - PUT /proxy/[port]/blacklist - Set a URL to blacklist. Takes the following parameters:
   - regex - the blacklist regular expression
   - status - the HTTP status code to return for URLs that are blacklisted
+  - method - regular expression for matching method., e.g., POST. Emtpy for matching all method.
  - DELETE /proxy/[port]/blacklist - Clears all URL patterns from the blacklist
  - PUT /proxy/[port]/limit - Limit the bandwidth through the proxy. Takes the following parameters:
-  - downstreamKbps - Sets the downstream kbps
-  - upstreamKbps - Sets the upstream kbps
+  - downstreamKbps - Sets the downstream bandwidth limit in kbps
+  - upstreamKbps - Sets the upstream bandwidth limit kbps
+  - downstreamMaxKB - Specifies how many kilobytes in total the client is allowed to download through the proxy.
+  - upstreamMaxKB - Specifies how many kilobytes in total the client is allowed to upload through the proxy.
   - latency - Add the given latency to each HTTP request
   - enable - (true/false) a boolean that enable bandwidth limiter. By default the limit is disabled, although setting any of the properties above will implicitly enable throttling
   - payloadPercentage - a number ]0, 100] specifying what percentage of data sent is payload. e.g. use this to take into account overhead due to tcp/ip.
   - maxBitsPerSecond - The max bits per seconds you want this instance of StreamManager to respect.
+ - GET /proxy/[port]/limit - Displays the amount of data remaining to be uploaded/downloaded until the limit is reached.
  - POST /proxy/[port]/headers - Set and override HTTP Request headers. For example setting a custom User-Agent.
   - Payload data should be json encoded set of headers (not url-encoded)
  - POST /proxy/[port]/hosts - Overrides normal DNS lookups and remaps the given hosts with the associated IP address
@@ -118,12 +122,14 @@ system properties will be used to specify the upstream proxy.
 Command-line Arguments
 ----------------------
 
- - -port <port>
+ - -port \<port\>
   - Port on which the API listens. Default value is 8080.
  - -address <address>
   - Address to which the API is bound. Default value is 0.0.0.0.
- - -proxyPortRange <from>-<to>
-  - Range of ports reserved for proxies. Only applies if *port* parameter is not supplied in the POST request. Default values are <port>+1 to <port>+500+1.
+ - -proxyPortRange \<from\>-\<to\>
+  - Range of ports reserved for proxies. Only applies if *port* parameter is not supplied in the POST request. Default values are \<port\>+1 to \<port\>+500+1.
+ - -ttl \<seconds\>
+  - Proxy will be automatically deleted after a specified time period. Off by default.
 
 Embedded Mode
 -------------
@@ -243,6 +249,26 @@ If you are running the proxy with Selenium or another application, you can confi
 	    </exclusion>
         </exclusions>
     </dependency>
+
+Native DNS Resolution
+---------------------
+
+If you are having name resolution issues with the proxy, you can use native Java name resolution as a fallback to browsermob-proxy's default XBill resolution. To enable native DNS fallback, set the JVM property `bmp.allowNativeDnsFallback` to `true`.
+
+When running from the command line:
+
+    $ JAVA_OPTS="-Dbmp.allowNativeDnsFallback=true" sh browsermob-proxy
+
+or in Windows:
+
+    C:\browsermob-proxy\bin> set JAVA_OPTS="-Dbmp.allowNativeDnsFallback=true"
+    C:\browsermob-proxy\bin> browsermob-proxy.bat
+
+If you are running within a Selenium test, you can set the `bmp.allowNativeDnsFallback` JVM property when you launch your Selenium tests, or programmatically when creating the Proxy:
+
+    System.setProperty("bmp.allowNativeDnsFallback", "true");
+    ProxyServer proxyServer = new ProxyServer(0);
+    proxyServer.start();
 
 Creating the batch files from source
 ------------------------------------
